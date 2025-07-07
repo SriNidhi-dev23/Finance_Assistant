@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Range-wise Analysis</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="flex bg-gray-50 text-gray-800">
+
+  <!-- Sidebar -->
+  <aside class="w-64 min-h-screen bg-white border-r shadow-sm">
+    <div class="flex flex-col items-center p-6 border-b">
+      <img src="https://img.icons8.com/3d-fluency/96/user-male-circle.png" alt="User" class="w-20 h-20 rounded-full mb-2"/>
+      
+    </div>
+    <nav class="mt-6 space-y-1 px-4 text-sm">
+      <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium">
+        <img src="https://img.icons8.com/3d-fluency/64/city-buildings.png" class="w-5 h-5"/> Home
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium">
+        <img src="https://img.icons8.com/3d-fluency/64/combo-chart.png" class="w-5 h-5"/> Dashboard
+      </a>
+      <a href="{{ url_for('transactions_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium">
+        <img src="https://img.icons8.com/3d-fluency/64/money.png" class="w-5 h-5"/> Transactions
+      </a>
+      <a href="{{ url_for('receipts_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium">
+        <img src="https://img.icons8.com/3d-fluency/64/bill.png" class="w-5 h-5"/> Upload Receipts
+      </a>
+      <a href="{{ url_for('range_analysis_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md bg-emerald-100 text-emerald-800 font-semibold">
+        <img src="https://img.icons8.com/3d-fluency/64/calendar.png" class="w-5 h-5"/> Range Analysis
+      </a>
+       <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-2 mt-4 rounded-md text-red-600 hover:bg-red-100 hover:text-red-700 transition">
+       Log out
+    </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="ml-64 flex-1 p-8">
+  <div class="max-w-5xl mx-auto">
+    <h2 class="text-2xl font-semibold mb-6 text-emerald-700">📊 Range-wise Transaction Analysis</h2>
+
+    <form id="date-range-form" class="flex gap-4 mb-6">
+      <input type="date" id="start-date" class="border border-gray-300 px-4 py-2 rounded w-full" required>
+      <input type="date" id="end-date" class="border border-gray-300 px-4 py-2 rounded w-full" required>
+      <button type="submit" class="bg-emerald-600 text-white px-6 py-2 rounded hover:bg-emerald-700">Show Analysis</button>
+    </form>
+
+    <div id="analysis-section" class="hidden space-y-10">
+      <table class="w-full bg-white shadow rounded border-collapse">
+        <thead class="bg-emerald-100 text-emerald-800">
+          <tr>
+            <th class="p-3 text-left">Date</th>
+            <th class="p-3 text-left">Description</th>
+            <th class="p-3 text-left">Category</th>
+            <th class="p-3 text-left">Type</th>
+            <th class="p-3 text-left">Amount</th>
+          </tr>
+        </thead>
+        <tbody id="transactions-table" class="divide-y"></tbody>
+      </table>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white shadow rounded-lg p-4">
+          <h3 class="text-lg font-semibold mb-2 text-gray-700">Category Breakdown (Pie)</h3>
+          <div class="h-80"><canvas id="pieChart" class="w-full h-full"></canvas></div>
+        </div>
+
+        <div class="bg-white shadow rounded-lg p-4">
+          <h3 class="text-lg font-semibold mb-2 text-gray-700">Income vs Expenses (Bar)</h3>
+          <div class="h-80"><canvas id="barChart" class="w-full h-full"></canvas></div>
+        </div>
+
+        <div class="mt-10 bg-white shadow rounded-lg p-6 md:col-span-2">
+          <h3 class="text-xl font-semibold mb-4 text-gray-700">📈 Statistical Summary</h3>
+          <div id="stats-summary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const form = document.getElementById('date-range-form');
+    const tableBody = document.getElementById('transactions-table');
+    const section = document.getElementById('analysis-section');
+
+    let pieChart, barChart;
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const start = document.getElementById('start-date').value;
+      const end = document.getElementById('end-date').value;
+
+      const res = await fetch(`/range-analysis?start=${start}&end=${end}`);
+      const data = await res.json();
+
+      tableBody.innerHTML = '';
+      data.transactions.forEach(t => {
+        tableBody.innerHTML += `<tr>
+          <td class="p-3">${t.date}</td>
+          <td class="p-3">${t.description}</td>
+          <td class="p-3">${t.category}</td>
+          <td class="p-3">${t.type}</td>
+          <td class="p-3">₹${t.amount}</td>
+        </tr>`;
+      });
+
+      section.classList.remove('hidden');
+
+      if (pieChart) pieChart.destroy();
+      pieChart = new Chart(document.getElementById('pieChart'), {
+        type: 'pie',
+        data: {
+          labels: Object.keys(data.category_breakdown),
+          datasets: [{
+            data: Object.values(data.category_breakdown),
+            backgroundColor: ['#34D399', '#F87171', '#60A5FA', '#FBBF24', '#A78BFA']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+
+      if (barChart) barChart.destroy();
+      barChart = new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Income', 'Expenses', 'Balance'],
+          datasets: [{
+            label: '₹ Amount',
+            data: [data.income, data.expenses, data.balance],
+            backgroundColor: ['#34D399', '#F87171', '#60A5FA']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      const statsDiv = document.getElementById('stats-summary');
+      statsDiv.innerHTML = '';
+      const createCard = (label, value, icon) => `
+        <div class="p-4 bg-emerald-50 border-l-4 border-emerald-400 rounded shadow-sm">
+          <p class="text-sm text-gray-500">${icon} ${label}</p>
+          <p class="text-lg font-bold text-gray-800 mt-1">${value}</p>
+        </div>`;
+
+      const totalTransactions = data.transactions.length;
+      const avgAmount = totalTransactions ? (data.transactions.reduce((sum, t) => sum + t.amount, 0) / totalTransactions).toFixed(2) : 0;
+
+      const categoryCount = {};
+      const typeCount = { income: 0, expense: 0 };
+      data.transactions.forEach(t => {
+        categoryCount[t.category] = (categoryCount[t.category] || 0) + 1;
+        typeCount[t.type] += 1;
+      });
+
+      const mostFrequentCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A";
+      const mostCommonType = typeCount.income >= typeCount.expense ? "Income" : "Expense";
+
+      statsDiv.innerHTML += createCard("Total Transactions", totalTransactions, "🧾");
+      statsDiv.innerHTML += createCard("Average Transaction", `₹${avgAmount}`, "💳");
+      statsDiv.innerHTML += createCard("Most Frequent Category", mostFrequentCategory, "📂");
+      statsDiv.innerHTML += createCard("Most Common Type", mostCommonType, "🔁");
+    });
+  </script>
+</body>
+</html>

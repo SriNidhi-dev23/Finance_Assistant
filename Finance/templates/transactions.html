@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Transactions</title>
+</head>
+<body class="flex font-sans bg-gray-50 text-gray-800">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white min-h-screen border-r shadow-sm">
+    <div class="flex flex-col items-center p-6 border-b">
+      <img src="https://img.icons8.com/3d-fluency/96/user-male-circle.png" alt="User" class="w-20 h-20 rounded-full mb-2"/>
+      
+    </div>
+    <nav class="mt-6 space-y-1 px-4 text-sm">
+      <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium {{ 'bg-emerald-100' if request.path == url_for('index') else '' }}">
+        <img src="https://img.icons8.com/3d-fluency/64/city-buildings.png" class="w-5 h-5"/> Home
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium {{ 'bg-emerald-100' if request.path == url_for('dashboard') else '' }}">
+        <img src="https://img.icons8.com/3d-fluency/64/combo-chart.png" class="w-5 h-5"/> Dashboard
+      </a>
+      <a href="{{ url_for('transactions_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md bg-emerald-100 text-emerald-800 font-semibold">
+        <img src="https://img.icons8.com/3d-fluency/64/money.png" class="w-5 h-5"/> Transactions
+      </a>
+      <a href="{{ url_for('receipts_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium">
+        <img src="https://img.icons8.com/3d-fluency/64/bill.png" class="w-5 h-5"/> Upload Receipts
+      </a>
+      <a href="{{ url_for('range_analysis_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium">
+        <img src="https://img.icons8.com/3d-fluency/64/calendar.png" class="w-5 h-5"/> Range Analysis
+      </a>
+       <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-2 mt-4 rounded-md text-red-600 hover:bg-red-100 hover:text-red-700 transition">
+       Log out
+    </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-8">
+    <h2 class="text-2xl font-bold mb-6 text-emerald-700">All Transactions</h2>
+
+    <!-- Transaction Form -->
+    <form id="transaction-form" class="flex flex-wrap gap-4 mb-8 items-center">
+      <input type="text" name="description" placeholder="Description" required class="border border-gray-300 rounded-md px-4 py-2"/>
+      <input type="number" name="amount" placeholder="Amount" step="0.01" required class="border border-gray-300 rounded-md px-4 py-2"/>
+      <select name="type" required class="border border-gray-300 rounded-md px-4 py-2">
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+      <input type="text" name="category" placeholder="Category" required class="border border-gray-300 rounded-md px-4 py-2"/>
+      <input type="date" name="date" required class="border border-gray-300 rounded-md px-4 py-2"/>
+      <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700">Save</button>
+    </form>
+
+    <!-- Transactions Table -->
+    <div class="overflow-x-auto bg-white rounded-lg shadow">
+      <table class="min-w-full text-sm">
+        <thead class="bg-emerald-50 text-emerald-800">
+          <tr>
+            <th class="text-left py-3 px-4">Date</th>
+            <th class="text-left py-3 px-4">Description</th>
+            <th class="text-left py-3 px-4">Category</th>
+            <th class="text-left py-3 px-4">Type</th>
+            <th class="text-left py-3 px-4">Amount</th>
+          </tr>
+        </thead>
+        <tbody id="transactions-table-body">
+          {% for txn in transactions %}
+          <tr class="border-t">
+            <td class="py-3 px-4">{{ txn.date }}</td>
+            <td class="py-3 px-4">{{ txn.description }}</td>
+            <td class="py-3 px-4">{{ txn.category }}</td>
+            <td class="py-3 px-4 {{ txn.type }}">
+              {{ txn.type.capitalize() }}
+            </td>
+            <td class="py-3 px-4 {{ txn.type }}">
+              {{ '+' if txn.type == 'income' else '-' }} ₹{{ "%.2f"|format(txn.amount) }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-8 flex justify-between items-center text-sm">
+      {% if page > 1 %}
+      <a href="{{ url_for('transactions_page', page=page-1) }}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">← Previous</a>
+      {% else %}
+      <span class="px-4 py-2 bg-gray-100 text-gray-400 rounded cursor-not-allowed">← Previous</span>
+      {% endif %}
+
+      <span class="text-gray-600">Page {{ page }} of {{ total_pages }}</span>
+
+      {% if page < total_pages %}
+      <a href="{{ url_for('transactions_page', page=page+1) }}" class="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600">Next →</a>
+      {% else %}
+      <span class="px-4 py-2 bg-gray-100 text-gray-400 rounded cursor-not-allowed">Next →</span>
+      {% endif %}
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('transaction-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        description: form.description.value,
+        amount: form.amount.value,
+        type: form.type.value,
+        category: form.category.value,
+        date: form.date.value
+      };
+
+      const res = await fetch('/transactions', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        window.location.reload();
+      } else {
+        alert("Failed to save transaction.");
+      }
+    });
+  </script>
+
+</body>
+</html>

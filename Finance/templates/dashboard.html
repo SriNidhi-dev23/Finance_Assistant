@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 flex">
+
+<!-- Sidebar -->
+  <aside class="w-64 min-h-screen bg-white border-r border-gray-200 px-4 py-6 fixed">
+    <div class="flex flex-col items-center">
+      <img src="https://img.icons8.com/3d-fluency/96/user-male-circle.png" alt="User" class="w-20 h-20 mb-2" />
+    </div>
+    <nav class="mt-6 space-y-2 text-sm">
+      <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-50 transition">
+        <img src="https://img.icons8.com/3d-fluency/64/city-buildings.png" class="w-5 h-5"/> Home
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-4 py-2 rounded-md text-emerald-700 bg-emerald-100 font-medium">
+        <img src="https://img.icons8.com/3d-fluency/64/combo-chart.png" class="w-5 h-5"/> Dashboard
+      </a>
+      <a href="{{ url_for('transactions_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-50 transition">
+        <img src="https://img.icons8.com/3d-fluency/64/money.png" class="w-5 h-5"/> Transactions
+      </a>
+      <a href="{{ url_for('receipts_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-50 transition">
+        <img src="https://img.icons8.com/3d-fluency/64/bill.png" class="w-5 h-5"/> Upload Receipts
+      </a>
+      <a href="{{ url_for('range_analysis_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-50 transition">
+        <img src="https://img.icons8.com/3d-fluency/64/calendar.png" class="w-5 h-5"/> Range Analysis
+      </a>
+       <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-2 mt-4 rounded-md text-red-600 hover:bg-red-100 hover:text-red-700 transition">
+       Log out
+    </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="ml-64 flex-1 p-8">
+    <!-- Summary Cards -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+      <div class="bg-white shadow-md rounded-lg p-6 text-center hover:shadow-lg transition">
+        <img src="https://img.icons8.com/3d-fluency/40/increase.png" class="mx-auto mb-2"/>
+        <h3 class="text-sm text-gray-500">Total Income</h3>
+        <p class="text-2xl font-semibold text-green-500" id="income">₹0</p>
+      </div>
+      <div class="bg-white shadow-md rounded-lg p-6 text-center hover:shadow-lg transition">
+        <img src="https://img.icons8.com/fluency/48/bearish.png" class="mx-auto mb-2"/>
+        <h3 class="text-sm text-gray-500">Total Expenses</h3>
+        <p class="text-2xl font-semibold text-red-500" id="expenses">₹0</p>
+      </div>
+      <div class="bg-white shadow-md rounded-lg p-6 text-center hover:shadow-lg transition">
+        <img src="https://img.icons8.com/3d-fluency/40/wallet.png" class="mx-auto mb-2"/>
+        <h3 class="text-sm text-gray-500">Balance</h3>
+        <p class="text-2xl font-semibold text-blue-500" id="balance">₹0</p>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-lg font-semibold text-emerald-600 mb-4">Spending by Category</h2>
+        <canvas id="categoryChart"></canvas>
+      </div>
+      <div class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-lg font-semibold text-emerald-600 mb-4">Income vs Expenses</h2>
+        <canvas id="barChart"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    async function loadDashboard() {
+      const res = await fetch('/dashboard-data');
+      const data = await res.json();
+
+      document.getElementById('income').innerText = `₹${data.income.toFixed(2)}`;
+      document.getElementById('expenses').innerText = `₹${data.expenses.toFixed(2)}`;
+      document.getElementById('balance').innerText = `₹${data.balance.toFixed(2)}`;
+
+      const categoryLabels = Object.keys(data.categories);
+      const categoryValues = Object.values(data.categories);
+
+      new Chart(document.getElementById('categoryChart'), {
+        type: 'pie',
+        data: {
+          labels: categoryLabels,
+          datasets: [{
+            data: categoryValues,
+            backgroundColor: ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6']
+          }]
+        },
+        options: {
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+
+      new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Income', 'Expenses'],
+          datasets: [{
+            label: 'Amount',
+            data: [data.income, data.expenses],
+            backgroundColor: ['#34d399', '#f87171'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    window.onload = loadDashboard;
+  </script>
+</body>
+</html>

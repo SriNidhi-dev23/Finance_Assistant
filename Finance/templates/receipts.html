@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Receipts - Personal Finance Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="flex bg-gray-50 text-gray-800 font-sans">
+
+  <!-- Sidebar -->
+  <aside class="w-64 min-h-screen bg-white border-r shadow-sm">
+    <div class="flex flex-col items-center p-6 border-b">
+      <img src="https://img.icons8.com/3d-fluency/96/user-male-circle.png" alt="User" class="w-20 h-20 rounded-full mb-2"/>
+    </div>
+    <nav class="mt-6 space-y-1 px-4 text-sm">
+      <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium">
+        <img src="https://img.icons8.com/3d-fluency/64/city-buildings.png" class="w-5 h-5"/> Home
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium">
+        <img src="https://img.icons8.com/3d-fluency/64/combo-chart.png" class="w-5 h-5"/> Dashboard
+      </a>
+      <a href="{{ url_for('transactions_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium">
+        <img src="https://img.icons8.com/3d-fluency/64/money.png" class="w-5 h-5"/> Transactions
+      </a>
+      <a href="{{ url_for('receipts_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md bg-emerald-100 text-emerald-800 font-semibold">
+        <img src="https://img.icons8.com/3d-fluency/64/bill.png" class="w-5 h-5"/> Upload Receipts
+      </a>
+      <a href="{{ url_for('range_analysis_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 text-emerald-800 font-medium">
+        <img src="https://img.icons8.com/3d-fluency/64/calendar.png" class="w-5 h-5"/> Range Analysis
+      </a>
+      <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-2 mt-4 rounded-md text-red-600 hover:bg-red-100 hover:text-red-700 transition">
+       Log out
+    </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-8 overflow-y-auto">
+    <h2 class="text-2xl font-semibold mb-4 text-emerald-700">Upload Receipts and PDFs</h2>
+
+    <!-- Upload Section -->
+    <div id="upload-zone" class="border-2 border-dashed border-emerald-400 bg-emerald-50 p-6 text-center rounded-md">
+      <input type="file" id="receiptInput" multiple accept=".pdf,.jpg,.jpeg,.png" hidden />
+      <label for="receiptInput" class="cursor-pointer text-emerald-600">
+        <div class="text-2xl">📤 Drag & drop or click to upload receipts</div>
+        <small class="text-gray-500">Accepted: PDF, JPG, PNG</small>
+      </label>
+    </div>
+
+    <button id="uploadBtn" class="mt-4 bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">
+      Upload & Process
+    </button>
+
+    <div id="upload-status" class="mt-4 font-medium text-gray-700"></div>
+    <div id="receipt-results" class="mt-6 space-y-4"></div>
+    <div id="results" class="mt-8 space-y-6"></div>
+  </main>
+
+  <!-- JS -->
+  <script>
+    let selectedFiles = [];
+
+    document.getElementById("receiptInput").addEventListener("change", (event) => {
+      selectedFiles = Array.from(event.target.files);
+      document.getElementById("upload-status").innerText =
+        selectedFiles.length > 0
+          ? `${selectedFiles.length} receipt(s) selected.`
+          : "No receipts selected.";
+    });
+
+    document.getElementById("uploadBtn").addEventListener("click", async () => {
+      if (selectedFiles.length === 0) {
+        alert("Please select at least one receipt.");
+        return;
+      }
+
+      const formData = new FormData();
+      selectedFiles.forEach(file => formData.append("file", file));
+
+      document.getElementById("upload-status").innerText =
+        "⏳ Uploading and analyzing receipts...";
+
+      try {
+        const response = await fetch("/upload-receipts", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+        const resultDiv = document.getElementById("receipt-results");
+        resultDiv.innerHTML = "";
+
+        if (data.results.length === 0) {
+          document.getElementById("upload-status").innerText = "⚠️ No valid data extracted from receipts.";
+          resultDiv.innerHTML = `<p>No expenses detected from receipts.</p>`;
+        } else {
+          data.results.forEach((res, i) => {
+            const parsed = res.parsed || {};
+            const html = `
+              <div class="border border-gray-300 p-4 rounded-md bg-white">
+                <strong>Receipt ${i + 1}</strong><br/>
+                File: ${res.filename}<br/>
+                OCR Text: ${res.text}<br/>
+                <b>Amount:</b> ₹${parsed.amount || 0.0} <br/>
+                <b>Date:</b> ${parsed.date || '-'} <br/>
+                <b>Description:</b> ${parsed.description || '-'}<br/>
+              </div>
+            `;
+            resultDiv.innerHTML += html;
+          });
+
+          document.getElementById("upload-status").innerText =
+            "✅ Analysis complete. Check your dashboard and transactions.";
+
+          resultDiv.innerHTML += `
+            <div class="text-green-600 font-semibold mt-4">
+              ✅ Analysis complete. Check your 
+              <a href='/transactions' class='underline'>transactions</a> and 
+              <a href='/dashboard' class='underline'>dashboard</a> for insights.
+            </div>`;
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        document.getElementById("upload-status").innerText = "❌ Error processing receipts.";
+      }
+    });
+
+  </script>
+
+</body>
+</html>

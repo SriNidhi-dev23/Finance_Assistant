@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Personal Finance Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(to bottom right, #ecfdf5, #d1fae5);
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center h-screen">
+
+  <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-8 space-y-6">
+    <h2 class="text-2xl font-bold text-center text-emerald-600">Sign in to your account</h2>
+
+    <form method="POST" action="{{ url_for('login') }}" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input type="email" name="email" required class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <input type="password" name="password" required class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+      </div>
+
+      <div class="flex justify-between items-center text-sm">
+        <label class="inline-flex items-center">
+          <input type="checkbox" class="form-checkbox text-emerald-600">
+          <span class="ml-2 text-gray-700">Remember me</span>
+        </label>
+        <a href="/forgot" class="text-emerald-600 hover:underline">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-semibold">
+        Sign In
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-600">Don't have an account?
+      <a href="{{ url_for('register') }}" class="text-emerald-600 hover:underline">Register</a>
+    </p>
+  </div>
+
+</body>
+</html>

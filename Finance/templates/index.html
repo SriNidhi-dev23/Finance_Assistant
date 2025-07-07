@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Finance Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/@popperjs/core@2"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <style>
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .float-icon {
+      animation: float 3s ease-in-out infinite;
+    }
+    .glow-on-hover:hover {
+      box-shadow: 0 0 12px rgba(34,197,94,0.6);
+    }
+    .typing-effect {
+      font-size: 1.5rem;
+      color: #34D399; /* Emerald green */
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: 0.15em solid #34D399; /* Cursor effect */
+    }
+    @keyframes fade-in {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+    animation: fade-in 1.2s ease-out;
+    }
+
+  </style>
+</head>
+<body class="bg-white text-gray-800 flex">
+
+<!-- Sidebar -->
+<aside class="w-64 min-h-screen fixed p-6 flex flex-col gap-6 border-r border-gray-200 bg-white shadow-sm">
+  <div class="flex flex-col items-center">
+    <img src="https://img.icons8.com/3d-fluency/96/user-male-circle.png" alt="User " class="w-20 h-20 rounded-full mb-2 float-icon"/>
+    <h2 class="text-xl font-semibold text-emerald-700">{{ user.name if user else 'Guest' }}</h2>
+  </div>
+
+  <nav class="mt-6 space-y-1 text-sm">
+    <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 hover:text-emerald-700 glow-on-hover transition {% if request.path == url_for('index') %}bg-emerald-100 text-emerald-700{% endif %}">
+      <img src="https://img.icons8.com/3d-fluency/64/city-buildings.png" class="w-6 h-6 float-icon"/> Home
+    </a>
+    <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 hover:text-emerald-700 glow-on-hover transition {% if request.path == url_for('dashboard') %}bg-emerald-100 text-emerald-700{% endif %}">
+      <img src="https://img.icons8.com/3d-fluency/64/combo-chart.png" class="w-6 h-6"/> Dashboard
+    </a>
+    <a href="{{ url_for('transactions_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 hover:text-emerald-700 glow-on-hover transition {% if request.path == url_for('transactions_page') %}bg-emerald-100 text-emerald-700{% endif %}">
+      <img src="https://img.icons8.com/3d-fluency/64/money.png" class="w-6 h-6"/> Transactions
+    </a>
+    <a href="{{ url_for('receipts_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 hover:text-emerald-700 glow-on-hover transition {% if request.path == url_for('receipts_page') %}bg-emerald-100 text-emerald-700{% endif %}">
+      <img src="https://img.icons8.com/3d-fluency/64/bill.png" class="w-6 h-6"/> Upload Receipts
+    </a>
+    <a href="{{ url_for('range_analysis_page') }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-emerald-100 hover:text-emerald-700 glow-on-hover transition {% if request.path == url_for('range_analysis_page') %}bg-emerald-100 text-emerald-700{% endif %}">
+      <img src="https://img.icons8.com/3d-fluency/64/calendar.png" class="w-6 h-6"/> Range Analysis
+    </a>
+    <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-2 mt-4 rounded-md text-red-600 hover:bg-red-100 hover:text-red-700 transition">
+       Log out
+    </a>
+  </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="ml-64 p-8 flex-1 bg-gray-50 min-h-screen flex flex-col justify-center items-center">
+  <div class="text-center mb-12">
+    <h1 class="text-5xl font-sans-serif text-emerald-600 mb-4">Hi {{ user.name if user else 'Guest' }}!</h1>
+    <div class="typing-effect" id="typing-text"></div>
+  </div>
+
+<!-- Summary Cards -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+  <div class="bg-white p-8 h-52 rounded-xl shadow-lg hover:shadow-xl transition text-center border transform hover:scale-105 duration-300">
+    <img src="https://img.icons8.com/3d-fluency/64/wallet.png" class="mx-auto mb-4 w-16 h-16 float-icon"/>
+    <h3 class="text-gray-500 text-sm font-medium">Total Balance</h3>
+    <p class="text-2xl font-extrabold text-emerald-600 mt-1">₹{{ balance }}</p>
+  </div>
+  <div class="bg-white p-8 h-52 rounded-xl shadow-lg hover:shadow-xl transition text-center border transform hover:scale-105 duration-300">
+    <img src="https://img.icons8.com/3d-fluency/64/increase.png" class="mx-auto mb-4 w-16 h-16 float-icon"/>
+    <h3 class="text-gray-500 text-sm font-medium">Monthly Income</h3>
+    <p class="text-2xl font-extrabold text-green-500 mt-1">₹{{ income }}</p>
+  </div>
+  <div class="bg-white p-8 h-52 rounded-xl shadow-lg hover:shadow-xl transition text-center border transform hover:scale-105 duration-300">
+    <img src="https://img.icons8.com/fluency/48/bearish.png" class="mx-auto mb-4 w-16 h-16 float-icon"/>
+    <h3 class="text-gray-500 text-sm font-medium">Monthly Expenses</h3>
+    <p class="text-2xl font-extrabold text-red-500 mt-1">₹{{ expenses }}</p>
+  </div>
+  <div class="bg-white p-8 h-52 rounded-xl shadow-lg hover:shadow-xl transition text-center border transform hover:scale-105 duration-300">
+    <img src="https://img.icons8.com/3d-fluency/64/money-bag.png" class="mx-auto mb-4 w-16 h-16 float-icon"/>
+    <h3 class="text-gray-500 text-sm font-medium">Savings Rate</h3>
+    <p class="text-2xl font-extrabold text-yellow-500 mt-1">{{ savings_rate }}%</p>
+  </div>
+</section>
+
+
+
+<!-- About Section -->
+<section class="w-full mt-20 mb-10 px-6">
+  <div class="max-w-4xl mx-auto bg-gradient-to-r from-emerald-50 via-white to-emerald-50 shadow-md rounded-xl p-8 border border-emerald-100 animate-fade-in">
+    <h2 class="text-3xl font-bold text-center text-emerald-700 mb-4 flex items-center justify-center gap-2">
+      <i class="fa-solid fa-lightbulb text-yellow-400 animate-pulse"></i> About the Website
+    </h2>
+    <p class="text-lg text-gray-700 font-serif leading-relaxed text-center">
+      Welcome to your <span class="text-emerald-600 font-semibold">Personal Finance Assistant</span> – your one-stop digital companion for managing money smarter, not harder. 
+      This tool helps you seamlessly track your income, expenses, and savings in real time, beautifully visualized through interactive graphs and charts.
+      No more manual entries – just upload your receipt images or bank statement PDFs, and watch your transactions auto-magically get added and categorized.
+      Whether you're planning a budget, reviewing your spending habits, or simply curious where your money goes each month, 
+      this assistant gives you a clear, organized view of your financial life – all in one place, all user-friendly.
+    </p>
+  </div>
+</section>
+</main>
+
+<script>
+  const texts = [
+    "Welcome to your personal finance assistance....",
+    "💸 Every rupee counts — track it, grow it, own it.",
+    "📊 Transform your spending into smarter saving — your money deserves a strategy.",
+    "💼 Finance isn’t just numbers — it’s your freedom in disguise."
+  ];
+  
+  let textIndex = 0;
+  let charIndex = 0;
+  const typingText = document.getElementById('typing-text');
+
+  function typeText() {
+    if (charIndex < texts[textIndex].length) {
+      typingText.textContent += texts[textIndex].charAt(charIndex);
+      charIndex++;
+      setTimeout(typeText, 100); // Adjust typing speed here
+    } else {
+      setTimeout(() => {
+        // Clear text and reset for next statement
+        typingText.textContent = ""; 
+        charIndex = 0; 
+        textIndex = (textIndex + 1) % texts.length; // Move to the next text
+        typeText(); // Start typing the next text
+      }, 3000); // Pause before starting the next text
+    }
+  }
+
+  typeText();
+
+</script>
+
+</body>
+</html>
