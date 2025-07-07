@@ -1,5 +1,3 @@
-# Finance_Assistant
-
 # Personal Finance Assistant
 
 A web-based finance dashboard that helps users manage income, expenses, and savings with auto transaction extraction and visual analytics.
